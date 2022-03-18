@@ -7,7 +7,8 @@ from sklearn.preprocessing import minmax_scale
 class Manimals:
 
     def __init__(self, file, suffix = "_midi", datacols = [], musicvars = [],
-                 channel = 0, time = 0, timestep = 1, duration = 1, tempo = 1500, volume = 100):
+                 channel = 0, time = 0, timestep = 1, duration = 1,
+                 tempo = 1500, volume = 100, datalength = None):
 
         """
         Documentation here
@@ -27,6 +28,7 @@ class Manimals:
         self.channel = channel
         self.tempo = tempo
         self.volume = volume
+        self.datalength = datalength
 
         # Load datafile
         try:
@@ -52,21 +54,23 @@ class Manimals:
             datacol = self.datafile[col]
             datacol = minmax_scale(datacol) * 127
             # for time being just start with first 20 datapoints
-            datacol = datacol[0:300]
+            datacol = datacol[0:self.datalength]
 
             if self.musicvars[i] == "pitch":
+                counter = 0
                 for pitch in datacol:
+                    counter += 1
                     if pitch == pitch:
-                        channel = 1 if pitch % 2 == 0 else 3
+                        channel = 1 if counter % 2 == 0 else 3
                         note = int(pitch)
-                        print(str(self.time)+" "+str(note), end=" ")
+                        print(str(counter)+" "+str(self.time)+" "+str(note))
                         self.MyMIDI.addNote(self.track,
                                             channel,
                                             note,
                                             self.time,
                                             self.duration,
                                             self.volume)
-                        if pitch % 2:
+                        if counter % 2:
                             self.time = self.time + self.timestep
 
         self.save_midi()

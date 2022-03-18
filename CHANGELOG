@@ -1,0 +1,6 @@
+# File to keep track of changes/improvements we made to the repository
+
+# 18/03/2022
+# - Added this changelog
+# - Updated class with datalength parameter
+# - Created repository and first usable python functions and testing file
