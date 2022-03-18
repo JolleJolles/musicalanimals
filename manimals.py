@@ -1,42 +1,80 @@
+import os
 import pandas as pd
 import numpy as np
 from midiutil import MIDIFile
+from sklearn.preprocessing import minmax_scale
 
 class Manimals:
 
-    def __init__(self, time = 0, duration = 1, tempo = 60, volume = 100):
+    def __init__(self, file, suffix = "_midi", datacols = [], musicvars = [],
+                 channel = 0, time = 0, timestep = 1, duration = 1, tempo = 1500, volume = 100):
 
-        self.time = def create_midi(file, datacols = [], musicvars = []):
+        """
+        Documentation here
+        time : int, default = 0
+            The time in beats
+        volume : in, default = 100
+            Volume level, between 0 and 127, per MIDI standardß
+        etc...
+        """
 
-    # 1) Checks
-    # Check dat length datacols == length musicvars
-    # etc
+        self.file = file
+        self.suffix = suffix
+        self.time = time
+        self.timestep = timestep
+        self.musicvars = musicvars
+        self.duration = duration
+        self.channel = channel
+        self.tempo = tempo
+        self.volume = volume
 
-    # 2) Load data file
-    datafile = pd.read_csv(file)
+        # Load datafile
+        try:
+            self.datafile = pd.read_csv(self.file)
+        except:
+            print("issue reading datafile")
+            return
+        self.datacols = datacols
+        self.musicvars = musicvars
 
-    # 3) Set up midifile
-    track = 0
-    channel = 0
-    time = 0 # In beats
-    duration = 1 # In beats
-    tempo = 60 # In BPM
-    volume = 100 # 0-127, as per the MIDI standard
+        # Set up midifile
+        self.track = 0
+        self.MyMIDI = MIDIFile(1)
+        self.MyMIDI.addTempo(self.track, self.time, self.tempo)
 
-    for i, col in enumerate(datacols):
-        datacol <- datafile.loc[,col]
-
-        musicconversion(data = datacol, transformation = musicvar[i])
-
-
-
-def musicconversion(data, transformation):
+        # Generate music
+        self.generate_music()
 
 
+    def generate_music(self):
+
+        for i, col in enumerate(self.datacols):
+            datacol = self.datafile[col]
+            datacol = minmax_scale(datacol) * 127
+            # for time being just start with first 20 datapoints
+            datacol = datacol[0:300]
+
+            if self.musicvars[i] == "pitch":
+                for pitch in datacol:
+                    if pitch == pitch:
+                        channel = 1 if pitch % 2 == 0 else 3
+                        note = int(pitch)
+                        print(str(self.time)+" "+str(note), end=" ")
+                        self.MyMIDI.addNote(self.track,
+                                            channel,
+                                            note,
+                                            self.time,
+                                            self.duration,
+                                            self.volume)
+                        if pitch % 2:
+                            self.time = self.time + self.timestep
+
+        self.save_midi()
 
 
+    def save_midi(self):
 
-
-create_midi(file = "~/Desktop/jolles-stickles-pairs.csv",
-            datacols = ["x","y"],
-            musicvars = ["amplitude","frequency"])
+        midifile = os.path.splitext(self.file)[0]+self.suffix+".mid"
+        with open(midifile, "wb") as output_file:
+            self.MyMIDI.writeFile(output_file)
+        print("Midi file written..")
